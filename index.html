@@ -20,101 +20,122 @@
 </head>
 <body class="font-jhenghei">
   <div id="appContainer">
-    <!-- 頂部主控制導航列 -->
-    <header id="headerControlBar">
-      <div class="header-left">
-        <div class="sutra-title-badge">
-          <svg class="book-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 2H6c-1.2 0-2 .8-2 2v16c0 1.2.8 2 2 2h13c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1zm-1 18H6c-.6 0-1-.4-1-1s.4-1 1-1h12v2zm0-4H6c-1.1 0-2 .7-2 1.6V4c0-.6.4-1 1-1h13v13z"/>
-          </svg>
-          <span class="app-title-text">金剛般若波羅蜜經</span>
-        </div>
-      </div>
-
-      <div class="header-controls">
-        <!-- 字體選擇選單 -->
-        <div class="control-item font-select-group">
-          <svg class="text-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/>
-          </svg>
-          <select id="fontSelect" aria-label="選擇字體">
-            <option value="jhengHei" selected>微軟正黑體</option>
-            <option value="biauKai">標楷體</option>
-          </select>
+    
+    <!-- 頂部控制面板包裝層（支援自動收合與展開，讓經文成為主角） -->
+    <div id="topControlsWrapper" class="top-controls-wrapper">
+      <!-- 頂部主控制導航列 -->
+      <header id="headerControlBar">
+        <div class="header-left">
+          <div class="sutra-title-badge">
+            <svg class="book-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19 2H6c-1.2 0-2 .8-2 2v16c0 1.2.8 2 2 2h13c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1zm-1 18H6c-.6 0-1-.4-1-1s.4-1 1-1h12v2zm0-4H6c-1.1 0-2 .7-2 1.6V4c0-.6.4-1 1-1h13v13z"/>
+            </svg>
+            <span class="app-title-text">金剛般若波羅蜜經</span>
+          </div>
         </div>
 
-        <div class="v-divider"></div>
+        <div class="header-controls">
+          <!-- 字體選擇選單 -->
+          <div class="control-item font-select-group">
+            <svg class="text-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/>
+            </svg>
+            <select id="fontSelect" aria-label="選擇字體">
+              <option value="jhengHei" selected>微軟正黑體</option>
+              <option value="biauKai">標楷體</option>
+            </select>
+          </div>
 
-        <!-- 章節跳轉選單 -->
-        <div class="control-item chapter-select-group">
-          <select id="chapterSelect" aria-label="選擇品別章節">
-            <!-- 由 JS 動態填入 34 章節 -->
-          </select>
-        </div>
+          <div class="v-divider"></div>
 
-        <div class="v-divider"></div>
+          <!-- 章節跳轉選單 -->
+          <div class="control-item chapter-select-group">
+            <select id="chapterSelect" aria-label="選擇品別章節">
+              <!-- 由 JS 動態填入 34 章節 -->
+            </select>
+          </div>
 
-        <!-- 字體大小控制 -->
-        <div class="control-item font-size-group">
-          <button id="btnFontSmaller" class="btn-icon" title="縮小字體 (最小 16pt)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M19 13H5v-2h14v2z"/>
+          <div class="v-divider"></div>
+
+          <!-- 字體大小控制 -->
+          <div class="control-item font-size-group">
+            <button id="btnFontSmaller" class="btn-icon" title="縮小字體 (最小 16pt)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </button>
+            <input type="range" id="fontSizeSlider" min="16" max="46" step="2" value="26">
+            <button id="btnFontLarger" class="btn-icon" title="放大字體 (最大 46pt)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+            </button>
+            <span id="fontSizeDisplay" class="size-badge">26pt</span>
+          </div>
+
+          <div class="v-divider"></div>
+
+          <!-- 開始 / 暫停捲動主按鈕 -->
+          <button id="btnScrollToggle" class="btn-primary" title="開始或暫停向下平滑捲動（快捷鍵：空白鍵 Space）">
+            <svg id="scrollIconPlay" class="btn-state-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="scrollIconPause" class="btn-state-icon hidden" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+            <span id="scrollToggleText">開始向下捲動</span>
+          </button>
+
+          <!-- 全螢幕切換按鈕 -->
+          <button id="btnFullscreen" class="btn-icon btn-fullscreen" title="全螢幕沉浸模式">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
             </svg>
           </button>
-          <input type="range" id="fontSizeSlider" min="16" max="46" step="2" value="26">
-          <button id="btnFontLarger" class="btn-icon" title="放大字體 (最大 46pt)">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+
+          <!-- 手動收合按鈕 -->
+          <button id="btnManualCollapse" class="btn-icon btn-collapse-toggle" title="收合選單，全螢幕念經">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
             </svg>
           </button>
-          <span id="fontSizeDisplay" class="size-badge">26pt</span>
+        </div>
+      </header>
+
+      <!-- 捲動速度與輔助控制列 -->
+      <section id="subControlBar">
+        <div class="sub-left">
+          <svg class="speed-icon" viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.59L8.41 12 9.83 10.59 12 12.76l4.17-4.17L17.59 10 13 14.59z"/>
+          </svg>
+          <span class="speed-label">捲動速度：</span>
+          <input type="range" id="scrollSpeedSlider" min="4" max="80" step="1" value="18">
+          <span id="speedDisplay" class="speed-badge">18 px/s</span>
+
+          <!-- 快捷速度檔位 -->
+          <div class="speed-presets">
+            <button class="btn-preset" data-speed="8">慢速</button>
+            <button class="btn-preset active" data-speed="18">適中</button>
+            <button class="btn-preset" data-speed="36">稍快</button>
+            <button class="btn-preset" data-speed="60">快速</button>
+          </div>
         </div>
 
-        <div class="v-divider"></div>
-
-        <!-- 開始 / 暫停捲動主按鈕 -->
-        <button id="btnScrollToggle" class="btn-primary" title="開始或暫停向下平滑捲動（快捷鍵：空白鍵 Space）">
-          <svg id="scrollIconPlay" class="btn-state-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-          <svg id="scrollIconPause" class="btn-state-icon hidden" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-          </svg>
-          <span id="scrollToggleText">開始向下捲動</span>
-        </button>
-
-        <!-- 全螢幕切換按鈕 -->
-        <button id="btnFullscreen" class="btn-icon btn-fullscreen" title="全螢幕沉浸模式">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-          </svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- 捲動速度與輔助控制列 -->
-    <section id="subControlBar">
-      <div class="sub-left">
-        <svg class="speed-icon" viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.59L8.41 12 9.83 10.59 12 12.76l4.17-4.17L17.59 10 13 14.59z"/>
-        </svg>
-        <span class="speed-label">捲動速度：</span>
-        <input type="range" id="scrollSpeedSlider" min="4" max="80" step="1" value="18">
-        <span id="speedDisplay" class="speed-badge">18 px/s</span>
-
-        <!-- 快捷速度檔位 -->
-        <div class="speed-presets">
-          <button class="btn-preset" data-speed="8">慢速</button>
-          <button class="btn-preset active" data-speed="18">適中</button>
-          <button class="btn-preset" data-speed="36">稍快</button>
-          <button class="btn-preset" data-speed="60">快速</button>
+        <div class="sub-right">
+          <span id="subHelpText">字體：微軟正黑體 ｜ 空白鍵（Space）快速暫停 / 繼續</span>
         </div>
-      </div>
+      </section>
 
-      <div class="sub-right">
-        <span id="subHelpText">字體：微軟正黑體 ｜ 空白鍵（Space）快速暫停 / 繼續</span>
+      <!-- 收合 / 展開觸控膠囊把手 -->
+      <div id="collapseHandle" class="collapse-handle" title="點擊收合或展開設定面板">
+        <span class="handle-pill">
+          <svg class="handle-chevron" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+          </svg>
+          <span id="handleText" class="handle-text">金剛經 · 設定</span>
+        </span>
       </div>
-    </section>
+    </div>
 
     <!-- 經文主捲動檢視區 -->
     <main id="sutraMainContainer">
@@ -150,17 +171,17 @@
       </div>
     </footer>
 
-    <!-- 行動裝置浮動控制按鈕 (Mobile Only) -->
+    <!-- 行動裝置浮動控制按鈕 (Mobile Only，便於大拇指單手操作) -->
     <div id="mobileFloatingControls" class="mobile-only">
-      <button id="btnMobilePlay" class="fab-btn" title="開始/暫停">
-        <svg id="mIconPlay" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+      <button id="btnMobilePlay" class="fab-btn" title="開始/暫停向下捲動">
+        <svg id="mIconPlay" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path d="M8 5v14l11-7z"/>
         </svg>
-        <svg id="mIconPause" class="hidden" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <svg id="mIconPause" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
         </svg>
       </button>
-      <button id="btnMobileTop" class="fab-btn-sub" title="回到頂部">
+      <button id="btnMobileTop" class="fab-btn-sub" title="回到經文頂端">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
           <path d="M12 4l-8 8h5v8h6v-8h5z"/>
         </svg>

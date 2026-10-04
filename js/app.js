@@ -1,6 +1,7 @@
 /**
  * 金剛般若波羅蜜經 - 跨平台 Web 應用程式核心邏輯
  * 具備 60fps 平滑持續捲動、Wake Lock 防休眠、字型與字級調整、章節跳轉與句對齊
+ * 🌟 支援控制列智慧自動收合與展開（讓經文成為全螢幕主角）
  */
 
 (function () {
@@ -28,10 +29,20 @@
   // 螢幕防休眠 (Screen Wake Lock)
   let wakeLockSentinel = null;
 
+  // 控制列收合狀態與計時器
+  let isControlsCollapsed = false;
+  let autoCollapseTimer = null;
+  let lastScrollTop = 0;
+
   // --- DOM 元素快取 ---
   const elements = {
     container: document.getElementById("sutraMainContainer"),
     content: document.getElementById("sutraContent"),
+    topControlsWrapper: document.getElementById("topControlsWrapper"),
+    collapseHandle: document.getElementById("collapseHandle"),
+    handleText: document.getElementById("handleText"),
+    btnManualCollapse: document.getElementById("btnManualCollapse"),
+    bottomStatusBar: document.getElementById("bottomStatusBar"),
     fontSelect: document.getElementById("fontSelect"),
     chapterSelect: document.getElementById("chapterSelect"),
     fontSizeSlider: document.getElementById("fontSizeSlider"),
@@ -73,6 +84,60 @@
 
     // 預設對齊第 0 句
     highlightSentence(0, false);
+
+    // 行動端載入 2.5 秒後若無操作，自動溫柔收合控制列，讓經文展現為主角
+    if (window.innerWidth <= 900) {
+      resetAutoCollapseTimer(2500);
+    }
+  }
+
+  // ==========================================================================
+  // 控制列智慧收合與展開管理 (讓經文成為主角)
+  // ==========================================================================
+  function collapseControls() {
+    if (isControlsCollapsed) return;
+    isControlsCollapsed = true;
+    elements.topControlsWrapper.classList.add("collapsed");
+    elements.bottomStatusBar.classList.add("collapsed");
+    elements.handleText.textContent = "金剛經 · 設定";
+  }
+
+  function expandControls() {
+    if (!isControlsCollapsed) return;
+    isControlsCollapsed = false;
+    elements.topControlsWrapper.classList.remove("collapsed");
+    elements.bottomStatusBar.classList.remove("collapsed");
+    elements.handleText.textContent = "收合選單";
+  }
+
+  function toggleControls() {
+    if (isControlsCollapsed) {
+      expandControls();
+      // 展開後若無動作，5秒後自動收合
+      resetAutoCollapseTimer(5000);
+    } else {
+      collapseControls();
+      clearAutoCollapseTimer();
+    }
+  }
+
+  function resetAutoCollapseTimer(delay = 3500) {
+    clearAutoCollapseTimer();
+    autoCollapseTimer = setTimeout(() => {
+      // 僅在不是正在手動操作下拉選單或滑桿時自動收合
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "SELECT" || activeEl.tagName === "INPUT")) {
+        return;
+      }
+      collapseControls();
+    }, delay);
+  }
+
+  function clearAutoCollapseTimer() {
+    if (autoCollapseTimer) {
+      clearTimeout(autoCollapseTimer);
+      autoCollapseTimer = null;
+    }
   }
 
   // ==========================================================================
@@ -166,6 +231,9 @@
     // 啟動 60fps 動畫幀
     animationFrameId = requestAnimationFrame(scrollStep);
     requestWakeLock();
+
+    // 開始捲動 1.2 秒後自動收合選單，經文全螢幕主角呈現！
+    resetAutoCollapseTimer(1200);
   }
 
   function stopScrolling() {
@@ -177,6 +245,9 @@
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
     }
+
+    // 暫停時自動展開控制面板，方便選品或調節
+    expandControls();
   }
 
   function toggleScrolling() {
@@ -196,7 +267,7 @@
     const maxScroll = elements.container.scrollHeight - elements.container.clientHeight;
 
     if (maxScroll <= 0 || elements.container.scrollTop >= maxScroll - 1) {
-      // 捲動到底部，自動停止
+      // 捲動到底部，自動停止並展開控制列
       stopScrolling();
       return;
     }
@@ -356,7 +427,6 @@
     }
   }
 
-  // 當使用者由後台切回分頁時，自動重新鎖定防休眠
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       requestWakeLock();
@@ -377,13 +447,35 @@
       }
     });
 
-    // 手動觸控或滑鼠滾輪時，同步更新累積器避免跳幀
-    elements.container.addEventListener("wheel", () => {
+    // 手動觸控或滑鼠滾輪：雙向手勢偵測（往下滑自動收合，往上滑自動展開）
+    elements.container.addEventListener("wheel", (e) => {
+      accumulatedScrollY = elements.container.scrollTop;
+      if (e.deltaY > 15) {
+        collapseControls();
+      } else if (e.deltaY < -20) {
+        expandControls();
+      }
+    }, { passive: true });
+
+    let touchStartY = 0;
+    elements.container.addEventListener("touchstart", (e) => {
+      touchStartY = e.touches[0].clientY;
       accumulatedScrollY = elements.container.scrollTop;
     }, { passive: true });
 
-    elements.container.addEventListener("touchmove", () => {
+    elements.container.addEventListener("touchmove", (e) => {
       accumulatedScrollY = elements.container.scrollTop;
+      const touchCurrentY = e.touches[0].clientY;
+      const diffY = touchCurrentY - touchStartY;
+
+      // 手指往上推（頁面向下捲動）-> 自動收合
+      if (diffY < -30) {
+        collapseControls();
+      }
+      // 手指往下刷（頁面向上捲動）-> 自動展開
+      else if (diffY > 40) {
+        expandControls();
+      }
     }, { passive: true });
 
     // 捲動狀態同步更新當前品別選單
@@ -392,6 +484,19 @@
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(syncChapterWithScroll, 120);
     }, { passive: true });
+
+    // 收合把手點擊事件
+    elements.collapseHandle.addEventListener("click", toggleControls);
+    if (elements.btnManualCollapse) {
+      elements.btnManualCollapse.addEventListener("click", collapseControls);
+    }
+
+    // 控制面板任何操作重設自動收合計時
+    elements.topControlsWrapper.addEventListener("click", () => {
+      if (!isScrolling) {
+        resetAutoCollapseTimer(5000);
+      }
+    });
 
     // 開始/暫停按鈕
     elements.btnScrollToggle.addEventListener("click", toggleScrolling);
@@ -448,7 +553,6 @@
 
     // 鍵盤空白鍵 (Space) 控制開始/暫停
     window.addEventListener("keydown", (e) => {
-      // 避免使用者在 select 上按空白時觸發
       if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT") return;
       if (e.code === "Space") {
         e.preventDefault();
